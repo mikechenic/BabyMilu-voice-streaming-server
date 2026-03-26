@@ -1,0 +1,71 @@
+name: current
+# Modified to account for linux file path differences (not srv/staging/current but ../../)
+services:
+  mqtt:
+    image: eclipse-mosquitto:2.0
+    networks:
+      default: null
+    ports:
+      - "1883:1883"
+    restart: unless-stopped
+    volumes:
+      - type: bind
+        source: ../../mosquitto.conf
+        target: /mosquitto/config/mosquitto.conf
+        read_only: true
+        bind:
+          create_host_path: true
+
+  server:
+    container_name: xiaozhi-esp32-server
+    build:
+      context: ../..
+      dockerfile: Dockerfile-server
+
+    command: ["python", "app.py"]
+
+    working_dir: /opt/xiaozhi-esp32-server
+
+    environment:
+      GOOGLE_APPLICATION_CREDENTIALS: /opt/secrets/gcp/sa.json
+      GOOGLE_CLOUD_PROJECT: baby-milu-local
+      FIRESTORE_EMULATOR_HOST: host.docker.internal:8080
+      MQTT_URL: mqtt://mqtt:1883
+      SERVER_EXTERNAL_IP: 136.111.52.199
+      OTA_MANIFEST_URL: https://storage.googleapis.com/milu-public/OTA_MIAO/ota_manifest.json
+      PYTHONUNBUFFERED: "1"
+      TZ: America/Los_Angeles
+
+    ports:
+      - "8000:8000"
+      - "8003:8003"
+
+    restart: unless-stopped
+    networks:
+      default: null
+
+    volumes:
+      # 1) Source code (so code changes apply without rebuild)
+      - type: bind
+        source: .
+        target: /opt/xiaozhi-esp32-server
+        bind:
+          create_host_path: true
+
+      # 2) Runtime config & data
+      - type: bind
+        source: ./data
+        target: /opt/xiaozhi-esp32-server/data
+        bind:
+          create_host_path: true
+
+      # 3) GCP Service Account
+      - type: bind
+        source: ./data/.gcp/sa.json
+        target: /opt/secrets/gcp/sa.json
+        read_only: true
+        
+networks:
+  default:
+    name: current_default
+
