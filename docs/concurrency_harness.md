@@ -454,3 +454,10 @@ Scalability recommendations:
 - Partition state and traffic by device_id ranges:
 
   Shard device by `device_id` hash to avoid concentrated hotspots in application workers and storage access patterns.
+
+
+
+Demo Videos:
+
+- [Concurrency test walkthrough](images/concurrency_test.mp4)
+- [Seed Firestore walkthrough](images/seed_firestore.mp4)
